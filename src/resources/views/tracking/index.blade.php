@@ -370,6 +370,169 @@
             border-top: 1px solid rgba(255, 255, 255, 0.14);
         }
 
+        .scan-divider {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 6px 0 2px;
+            color: var(--muted);
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .scan-divider::before,
+        .scan-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--line);
+        }
+
+        .btn-scan {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px 20px;
+            border-radius: 24px;
+            border: 2px dashed rgba(15, 118, 110, 0.35);
+            background: rgba(204, 251, 241, 0.35);
+            color: var(--primary-dark);
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 200ms ease;
+        }
+
+        .btn-scan:hover {
+            background: rgba(204, 251, 241, 0.7);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(15, 118, 110, 0.15);
+        }
+
+        .btn-scan svg {
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+
+        /* QR Scanner Modal Overlay */
+        .qr-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 200ms ease;
+        }
+
+        .qr-modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .qr-modal {
+            background: var(--panel);
+            border-radius: 28px;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.3);
+            width: min(440px, 100%);
+            overflow: hidden;
+            animation: slideUp 300ms ease;
+        }
+
+        .qr-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .qr-modal-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .qr-modal-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--line);
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 150ms ease;
+            color: var(--muted);
+            font-size: 1.1rem;
+            padding: 0;
+            min-width: unset;
+        }
+
+        .qr-modal-close:hover {
+            background: #fee2e2;
+            border-color: #fca5a5;
+            color: #b91c1c;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .qr-modal-body {
+            padding: 20px 24px 24px;
+        }
+
+        #qr-reader {
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid var(--line);
+        }
+
+        #qr-reader video {
+            border-radius: 14px;
+        }
+
+        .qr-status {
+            margin-top: 14px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .qr-status.success {
+            color: var(--primary);
+        }
+
+        .qr-status.error {
+            color: #b91c1c;
+        }
+
+        /* Hide html5-qrcode built-in UI elements we don't need */
+        #qr-reader__dashboard_section_swaplink,
+        #qr-reader__header_message {
+            display: none !important;
+        }
+
         @media (max-width: 900px) {
             .services-grid,
             .footer-grid {
@@ -463,9 +626,22 @@
                     @endif
 
                     <div class="hint">
-                        Kode tracking diberikan oleh laundry saat order dibuat. Pelanggan juga tetap bisa scan QR untuk masuk otomatis.
+                        Kode tracking diberikan oleh laundry saat order dibuat.
                     </div>
                 </form>
+
+                <div class="scan-divider">atau</div>
+
+                <button type="button" class="btn-scan" id="btn-scan-qr">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+                        <rect x="7" y="7" width="10" height="10" rx="1"/>
+                    </svg>
+                    Scan QR Code
+                </button>
             </div>
         </section>
 
@@ -550,5 +726,132 @@
             </div>
         </footer>
     </div>
+
+    <!-- QR Scanner Modal -->
+    <div class="qr-modal-overlay" id="qr-modal-overlay">
+        <div class="qr-modal">
+            <div class="qr-modal-header">
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+                    </svg>
+                    Scan QR Code
+                </h3>
+                <button class="qr-modal-close" id="btn-close-scan" title="Tutup">&times;</button>
+            </div>
+            <div class="qr-modal-body">
+                <div id="qr-reader"></div>
+                <div class="qr-status" id="qr-status">Arahkan kamera ke QR Code dari tenant...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const btnScan    = document.getElementById('btn-scan-qr');
+        const btnClose   = document.getElementById('btn-close-scan');
+        const overlay    = document.getElementById('qr-modal-overlay');
+        const statusEl   = document.getElementById('qr-status');
+        let html5QrCode  = null;
+        let scanning     = false;
+
+        function resetStatus() {
+            statusEl.textContent = 'Arahkan kamera ke QR Code dari tenant...';
+            statusEl.className  = 'qr-status';
+        }
+
+        function stopScanner() {
+            if (html5QrCode && scanning) {
+                html5QrCode.stop().then(function () {
+                    scanning = false;
+                    html5QrCode.clear();
+                }).catch(function () {
+                    scanning = false;
+                });
+            }
+        }
+
+        function openScanner() {
+            overlay.classList.add('active');
+            resetStatus();
+
+            html5QrCode = new Html5Qrcode('qr-reader');
+
+            html5QrCode.start(
+                { facingMode: 'environment' },
+                {
+                    fps: 10,
+                    qrbox: { width: 220, height: 220 },
+                    aspectRatio: 1,
+                },
+                function onSuccess(decodedText) {
+                    // QR berhasil terbaca
+                    scanning = false;
+                    html5QrCode.stop().then(function () {
+                        html5QrCode.clear();
+
+                        if (decodedText.startsWith('http://') || decodedText.startsWith('https://')) {
+                            // Ambil path dari URL di QR (misal: /tracking/code/LDR-XXXXX)
+                            // lalu gabungkan dengan domain yang sedang aktif sekarang,
+                            // agar tetap bekerja di domain manapun (lokal / cloudflare / production)
+                            try {
+                                var scannedUrl  = new URL(decodedText);
+                                var targetPath  = scannedUrl.pathname + scannedUrl.search + scannedUrl.hash;
+                                var redirectUrl = window.location.origin + targetPath;
+
+                                statusEl.textContent = '✓ QR Code terbaca! Mengalihkan...';
+                                statusEl.className   = 'qr-status success';
+
+                                setTimeout(function () {
+                                    window.location.href = redirectUrl;
+                                }, 400);
+                            } catch (e) {
+                                statusEl.textContent = '✗ Format URL dalam QR tidak valid.';
+                                statusEl.className   = 'qr-status error';
+                            }
+                        } else {
+                            statusEl.textContent = '✗ QR Code tidak dikenali. Pastikan QR berasal dari sistem kami.';
+                            statusEl.className   = 'qr-status error';
+                        }
+                    });
+                },
+                function onError() {
+                    // frame tanpa QR — diabaikan
+                }
+            ).then(function () {
+                scanning = true;
+            }).catch(function (err) {
+                statusEl.textContent = 'Gagal mengakses kamera. Pastikan izin kamera telah diberikan.';
+                statusEl.className   = 'qr-status error';
+            });
+        }
+
+        function closeScanner() {
+            stopScanner();
+            overlay.classList.remove('active');
+        }
+
+        btnScan.addEventListener('click', openScanner);
+        btnClose.addEventListener('click', closeScanner);
+
+        // Tutup modal jika klik di luar area modal
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) {
+                closeScanner();
+            }
+        });
+
+        // Tutup modal dengan tombol Escape
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && overlay.classList.contains('active')) {
+                closeScanner();
+            }
+        });
+    });
+    </script>
 </body>
 </html>
