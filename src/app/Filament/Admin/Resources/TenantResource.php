@@ -44,6 +44,16 @@ class TenantResource extends Resource
                 Forms\Components\Textarea::make('alamat')
                     ->rows(4)
                     ->columnSpanFull(),
+                Forms\Components\Section::make('Subscription & Status')
+                    ->schema([
+                        Forms\Components\Toggle::make('is_active')
+                            ->label('Aktif (Bisa Akses Panel)')
+                            ->default(true),
+                        Forms\Components\DateTimePicker::make('subscription_ends_at')
+                            ->label('Batas Waktu Langganan')
+                            ->helperText('Tenant hanya bisa login jika toggle aktif dan masa langganan belum lewat.')
+                            ->native(false),
+                    ])->columns(2),
                 Forms\Components\TextInput::make('password')
                     ->password()
                     ->revealable()
@@ -75,7 +85,15 @@ class TenantResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('alamat')
                     ->limit(40)
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\IconColumn::make('is_active')
+                    ->label('Status Aktif')
+                    ->boolean()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('subscription_ends_at')
+                    ->label('Langganan Berakhir')
+                    ->dateTime('d M Y H:i')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('laundries_count')
                     ->counts('laundries')
                     ->label('Total Order')

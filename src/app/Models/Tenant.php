@@ -19,6 +19,8 @@ class Tenant extends Authenticatable implements FilamentUser, HasName
         'email',
         'password',
         'alamat',
+        'is_active',
+        'subscription_ends_at',
     ];
 
     protected $hidden = [
@@ -30,6 +32,8 @@ class Tenant extends Authenticatable implements FilamentUser, HasName
     {
         return [
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'subscription_ends_at' => 'datetime',
         ];
     }
 
@@ -40,7 +44,25 @@ class Tenant extends Authenticatable implements FilamentUser, HasName
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $panel->getId() === 'tenant';
+        if ($panel->getId() === 'tenant') {
+            return $this->hasActiveSubscription();
+        }
+
+        return false;
+    }
+
+    public function hasActiveSubscription(): bool
+    {
+        if (! $this->is_active) {
+            return false;
+        }
+
+        // Jika subscription_ends_at bernilai null, kita anggap belum berlangganan (atau bisa juga dianggap seumur hidup, tergantung preferensi. Di sini kita anggap harus punya masa aktif).
+        if ($this->subscription_ends_at === null) {
+            return false;
+        }
+
+        return now()->lessThanOrEqualTo($this->subscription_ends_at);
     }
 
     public function getFilamentName(): string
