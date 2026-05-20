@@ -368,7 +368,9 @@
                     <div class="step {{ $stepClass }}">
                         <div class="step-number">{{ $stepIndex + 1 }}</div>
                         <strong>{{ $step['label'] }}</strong>
-                        <p>{{ $step['description'] }}</p>
+                        @if ($stepClass === 'done' || $stepClass === 'active')
+                            <p>{{ $step['description'] }}</p>
+                        @endif
                     </div>
                 @endforeach
             </div>
