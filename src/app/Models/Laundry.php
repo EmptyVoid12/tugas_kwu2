@@ -40,11 +40,33 @@ class Laundry extends Model
         self::LAYANAN_DRY_CLEAN => 'Dry Clean',
     ];
 
+    /**
+     * Harga per kg/item untuk setiap layanan.
+     */
+    public const HARGA_LAYANAN = [
+        self::LAYANAN_REGULER => 7000,    // per kg
+        self::LAYANAN_EXPRESS => 15000,   // per kg
+        self::LAYANAN_KILAT => 25000,     // per kg
+        self::LAYANAN_DRY_CLEAN => 35000, // per item
+    ];
+
+    /**
+     * Label satuan untuk setiap layanan.
+     */
+    public const SATUAN_LAYANAN = [
+        self::LAYANAN_REGULER => 'kg',
+        self::LAYANAN_EXPRESS => 'kg',
+        self::LAYANAN_KILAT => 'kg',
+        self::LAYANAN_DRY_CLEAN => 'item',
+    ];
+
     protected $fillable = [
         'nama_pelanggan',
         'no_hp',
         'alamat',
         'layanan',
+        'berat',
+        'total_harga',
         'tanggal_masuk',
         'estimasi_selesai',
         'status',
@@ -91,6 +113,11 @@ class Laundry extends Model
                 );
             }
 
+            // Auto-calculate total harga jika belum diset
+            if (filled($laundry->layanan) && filled($laundry->berat) && blank($laundry->total_harga)) {
+                $laundry->total_harga = self::resolvePrice($laundry->layanan, $laundry->berat);
+            }
+
             if (blank($laundry->kode_tracking)) {
                 $laundry->kode_tracking = self::generateTrackingCode();
             }
@@ -133,6 +160,24 @@ class Laundry extends Model
             self::LAYANAN_DRY_CLEAN => $tanggalMasuk->copy()->addDays(2),
             default => $tanggalMasuk->copy()->addDays(3),
         };
+    }
+
+    /**
+     * Hitung total harga berdasarkan layanan dan berat/jumlah.
+     */
+    public static function resolvePrice(string $layanan, float $beratOrJumlah): int
+    {
+        $hargaSatuan = self::HARGA_LAYANAN[$layanan] ?? 0;
+
+        return (int) ceil($hargaSatuan * $beratOrJumlah);
+    }
+
+    /**
+     * Format rupiah helper.
+     */
+    public static function formatRupiah(int $amount): string
+    {
+        return 'Rp ' . number_format($amount, 0, ',', '.');
     }
 
     public static function generateTrackingCode(): string

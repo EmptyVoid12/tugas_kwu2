@@ -56,7 +56,40 @@ class LaundryResource extends Resource
                             ->native(false)
                             ->required()
                             ->live()
-                            ->afterStateUpdated(fn (Set $set, Get $get) => static::syncEstimatedDate($set, $get)),
+                            ->afterStateUpdated(function (Set $set, Get $get, ?string $state) {
+                                static::syncEstimatedDate($set, $get);
+                                static::syncTotalHarga($set, $get);
+                                // Update label hint untuk berat
+                                if ($state === Laundry::LAYANAN_DRY_CLEAN) {
+                                    $set('berat', null);
+                                }
+                            }),
+                        Forms\Components\TextInput::make('berat')
+                            ->label(fn (Get $get): string => ($get('layanan') === Laundry::LAYANAN_DRY_CLEAN) ? 'Jumlah (item)' : 'Berat (kg)')
+                            ->numeric()
+                            ->required()
+                            ->minValue(0.1)
+                            ->step(0.1)
+                            ->suffix(fn (Get $get): string => ($get('layanan') === Laundry::LAYANAN_DRY_CLEAN) ? 'item' : 'kg')
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(fn (Set $set, Get $get) => static::syncTotalHarga($set, $get))
+                            ->helperText(function (Get $get): ?string {
+                                $layanan = $get('layanan');
+                                if (blank($layanan)) {
+                                    return 'Pilih jenis layanan terlebih dahulu';
+                                }
+                                $harga = Laundry::HARGA_LAYANAN[$layanan] ?? 0;
+                                $satuan = Laundry::SATUAN_LAYANAN[$layanan] ?? 'kg';
+                                return 'Harga: ' . Laundry::formatRupiah($harga) . ' / ' . $satuan;
+                            }),
+                        Forms\Components\TextInput::make('total_harga')
+                            ->label('Total Harga')
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->disabled()
+                            ->dehydrated()
+                            ->default(0)
+                            ->formatStateUsing(fn ($state) => $state ?? 0),
                         Forms\Components\DatePicker::make('tanggal_masuk')
                             ->required()
                             ->default(now())
@@ -118,6 +151,18 @@ class LaundryResource extends Resource
                 Tables\Columns\TextColumn::make('layanan')
                     ->formatStateUsing(fn (string $state): string => Laundry::LAYANAN_OPTIONS[$state] ?? $state)
                     ->badge(),
+                Tables\Columns\TextColumn::make('berat')
+                    ->label('Berat/Qty')
+                    ->formatStateUsing(function ($state, Laundry $record): string {
+                        if (blank($state)) return '-';
+                        $satuan = Laundry::SATUAN_LAYANAN[$record->layanan] ?? 'kg';
+                        return $state . ' ' . $satuan;
+                    })
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('total_harga')
+                    ->label('Total Harga')
+                    ->formatStateUsing(fn ($state): string => Laundry::formatRupiah((int) ($state ?? 0)))
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('tanggal_masuk')
                     ->date('d M Y')
                     ->sortable(),
@@ -235,6 +280,20 @@ class LaundryResource extends Resource
         );
 
         $set('estimasi_selesai', $estimate->format('Y-m-d'));
+    }
+
+    protected static function syncTotalHarga(Set $set, Get $get): void
+    {
+        $layanan = $get('layanan');
+        $berat = $get('berat');
+
+        if (blank($layanan) || blank($berat) || $berat <= 0) {
+            $set('total_harga', 0);
+            return;
+        }
+
+        $totalHarga = Laundry::resolvePrice($layanan, (float) $berat);
+        $set('total_harga', $totalHarga);
     }
 
     public static function getPages(): array
