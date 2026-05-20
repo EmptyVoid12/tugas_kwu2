@@ -41,6 +41,11 @@ class TenantResource extends Resource
                     ->email()
                     ->required()
                     ->unique(ignoreRecord: true),
+                Forms\Components\TextInput::make('no_hp')
+                    ->label('No HP')
+                    ->tel()
+                    ->required()
+                    ->maxLength(30),
                 Forms\Components\Textarea::make('alamat')
                     ->rows(4)
                     ->columnSpanFull(),
@@ -83,6 +88,9 @@ class TenantResource extends Resource
                 Tables\Columns\TextColumn::make('email')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('no_hp')
+                    ->label('No HP')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('alamat')
                     ->limit(40)
                     ->toggleable(isToggledHiddenByDefault: true),

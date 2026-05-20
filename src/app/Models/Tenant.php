@@ -17,6 +17,7 @@ class Tenant extends Authenticatable implements FilamentUser, HasName
     protected $fillable = [
         'nama_laundry',
         'email',
+        'no_hp',
         'password',
         'alamat',
         'is_active',
