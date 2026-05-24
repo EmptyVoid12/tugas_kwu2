@@ -7,6 +7,7 @@ use App\Models\Tenant;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
@@ -80,34 +81,36 @@ class TenantResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('id')
-                    ->sortable(),
+                    ->sortable()
+                    ->badge()
+                    ->color('gray'),
                 Tables\Columns\TextColumn::make('nama_laundry')
-                    ->label('Nama Laundry')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('email')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('no_hp')
-                    ->label('No HP')
-                    ->searchable(),
+                    ->label('Tenant')
+                    ->searchable(['nama_laundry', 'email', 'no_hp'])
+                    ->sortable()
+                    ->weight(FontWeight::SemiBold)
+                    ->description(fn (Tenant $record): string => $record->email . ' | ' . $record->no_hp)
+                    ->wrap(),
                 Tables\Columns\TextColumn::make('alamat')
+                    ->label('Alamat')
                     ->limit(40)
+                    ->wrap()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\IconColumn::make('is_active')
-                    ->label('Status Aktif')
-                    ->boolean()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('subscription_ends_at')
-                    ->label('Langganan Berakhir')
-                    ->dateTime('d M Y H:i')
+                Tables\Columns\TextColumn::make('is_active')
+                    ->label('Status')
+                    ->badge()
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Aktif' : 'Nonaktif')
+                    ->color(fn (bool $state): string => $state ? 'success' : 'danger')
+                    ->description(fn (Tenant $record): string => 'Berakhir: ' . ($record->subscription_ends_at?->format('d/m/Y H:i') ?? '-'))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('laundries_count')
                     ->counts('laundries')
-                    ->label('Total Order')
-                    ->badge(),
+                    ->label('Order')
+                    ->badge()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime('d M Y H:i')
+                    ->label('Dibuat')
+                    ->dateTime('d/m/Y')
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')

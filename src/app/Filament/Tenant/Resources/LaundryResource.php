@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Table;
@@ -137,39 +138,38 @@ class LaundryResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('nama_pelanggan')
-                    ->searchable()
-                    ->sortable(),
+                    ->label('Pelanggan')
+                    ->searchable(['nama_pelanggan', 'no_hp'])
+                    ->sortable()
+                    ->weight(FontWeight::SemiBold)
+                    ->description(fn (Laundry $record): ?string => filled($record->no_hp) ? 'No HP: ' . $record->no_hp : null)
+                    ->wrap(),
                 Tables\Columns\TextColumn::make('kode_tracking')
-                    ->label('Kode Tracking')
+                    ->label('Tracking')
                     ->searchable()
                     ->copyable()
                     ->badge()
-                    ->color('info'),
-                Tables\Columns\TextColumn::make('no_hp')
-                    ->label('No HP')
-                    ->searchable(),
+                    ->color('info')
+                    ->wrap(),
                 Tables\Columns\TextColumn::make('layanan')
+                    ->label('Layanan')
                     ->formatStateUsing(fn (string $state): string => Laundry::LAYANAN_OPTIONS[$state] ?? $state)
-                    ->badge(),
-                Tables\Columns\TextColumn::make('berat')
-                    ->label('Berat/Qty')
-                    ->formatStateUsing(function ($state, Laundry $record): string {
-                        if (blank($state)) return '-';
+                    ->badge()
+                    ->description(function (Laundry $record): string {
                         $satuan = Laundry::SATUAN_LAYANAN[$record->layanan] ?? 'kg';
-                        return $state . ' ' . $satuan;
+                        $berat = blank($record->berat) ? '-' : $record->berat . ' ' . $satuan;
+
+                        return $berat . ' | ' . Laundry::formatRupiah((int) ($record->total_harga ?? 0));
                     })
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('total_harga')
-                    ->label('Total Harga')
-                    ->formatStateUsing(fn ($state): string => Laundry::formatRupiah((int) ($state ?? 0)))
-                    ->sortable(),
+                    ->wrap(),
                 Tables\Columns\TextColumn::make('tanggal_masuk')
-                    ->date('d M Y')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('estimasi_selesai')
-                    ->date('d M Y')
-                    ->sortable(),
+                    ->label('Jadwal')
+                    ->date('d/m/Y')
+                    ->sortable()
+                    ->description(fn (Laundry $record): string => 'Estimasi: ' . ($record->estimasi_selesai?->format('d/m/Y') ?? '-'))
+                    ->wrap(),
                 Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
                     ->formatStateUsing(fn (string $state): string => Laundry::STATUS_OPTIONS[$state] ?? $state)
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -179,10 +179,6 @@ class LaundryResource extends Resource
                         Laundry::STATUS_DIAMBIL => 'info',
                         default => 'gray',
                     }),
-                Tables\Columns\IconColumn::make('qr_ready')
-                    ->label('QR')
-                    ->boolean()
-                    ->state(fn (Laundry $record): bool => filled($record->qr_code)),
             ])
             ->defaultSort('created_at', 'desc')
             ->actions([
